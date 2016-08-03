@@ -1,7 +1,19 @@
-import java.net.*;
-import java.io.*;
-import java.util.*;
-import org.json.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 
 class Item
 {
@@ -74,15 +86,15 @@ public class TSInfo
 {
 	public ArrayList combines;
 	public Map<Integer, String> components;
-	public ArrayList recipes;
-	public ArrayList spells;
+	public ArrayList<Object> recipes;
+	public ArrayList<Item> spells;
 
 	public TSInfo()
 	{
 		combines = new ArrayList();
 		components = new HashMap<Integer, String>();
-		recipes = new ArrayList();
-		spells = new ArrayList();
+		recipes = new ArrayList<Object>();
+		spells = new ArrayList<Item>();
 	}
 
 	public Item getItem(int id)
@@ -179,7 +191,7 @@ public class TSInfo
 		return 0;
 	}
 
-	public void readFromBuffed(String profession)
+	public void scanBuffed(String profession)
 	{
 		String prefix = "var bt = new Btabs(";
 		String suffix = ");bt.init();</script>";
@@ -219,14 +231,107 @@ public class TSInfo
 										}
 									}
 */
-									String name = row.getString("n");
-									if (!name.contains("UNUSED")) {
+//									String name = row.getString("n");
+//									if (!name.contains("UNUSED")) {
 										Item item = new Item();
 										item.id = getId(row.optJSONObject("p"));
 										item.spell = row.getInt("id");
 										spells.add(item);
-									}
+//									}
 								}
+							}
+						}
+					}
+					break;
+				}
+			}
+			in.close();
+//			out.close();
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+
+	public void scanWowHead(String profession)
+	{
+		try
+		{
+			URL url = new URL("http://www.thottbot.com/skill=" + getProfessionId(profession));
+			URLConnection bc = url.openConnection();
+			BufferedReader in = new BufferedReader(new InputStreamReader(bc.getInputStream()));
+//			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("WoWhead-" + profession))));
+
+			String prefix = "new Listview({template: 'spell', id: 'recipes',";
+			String suffix = "});";
+			String offset = "data: ";
+
+			spells.clear();
+			String line;
+			while ((line = in.readLine()) != null) {
+				if (line.startsWith(prefix) && line.endsWith(suffix)) {
+					combines.add("\n--[[ " + profession + " ]]--\n");
+					recipes.add("\n--[[ " + profession + " ]]--");
+					int index = line.indexOf(offset);
+					if (index != -1) {
+						line = line.substring(index + offset.length(), line.length() - suffix.length());
+						JSONArray rows = new JSONArray(line);
+						for (int i = 0; i < rows.length(); i++) {
+							JSONObject row = rows.getJSONObject(i);
+//							out.write(row + "\n");
+							int id = row.optInt("id");
+
+							Item item = new Item();
+//							Item item = getSpellItem(id);
+							if (item != null) {
+								JSONArray reagents = row.optJSONArray("reagents");
+
+								if (reagents != null) {
+									String re = "";
+									for (int j = 0; j < reagents.length(); j++) {
+										JSONArray obj = reagents.getJSONArray(j);
+
+										int component = obj.getInt(0);
+										int amount = obj.getInt(1);
+
+										components.put(component, "V");
+
+										re = re + component + ":" + amount + " ";
+									}
+
+//									String re = reagents.toString();
+
+//									re = re.replace("[[", "");
+//									re = re.replace("]]", "");
+//									re = re.replace("],[", " ");
+//									re = re.replace(",", ":");
+
+									item.reagents = re.trim();
+								}
+								JSONArray colors = row.optJSONArray("colors");
+
+								if (colors != null) {
+									int orange = colors.getInt(0);
+									int yellow = colors.getInt(1);
+									int green  = colors.getInt(2);
+									int grey   = colors.getInt(3);
+
+									if (green == 0) { green = grey; }
+									if (yellow == 0) { yellow = green; }
+									if (orange == 0) { orange = yellow; }
+
+									item.skill = item.skill + orange + "/" + yellow + "/" + green + "/" + grey;
+								}
+								JSONArray creates = row.optJSONArray("creates");
+
+								if (creates != null) {
+									item.id = creates.optInt(0);
+									item.yield = creates.optInt(1);
+								}
+
+								item.spell = id;
+								spells.add(item);
 							}
 						}
 					}
@@ -268,191 +373,117 @@ public class TSInfo
 // 16 Fished
 // 21 Pickpocketed
 
-
 	public void readFromWowHead(String profession)
 	{
-		String prefix = "new Listview(";
-		String suffix = "});";
-		String offset = "data: ";
-/*
-		try
-		{
-			URL url = new URL("http://www.wowhead.com/skill=" + getProfessionId(profession));
-			URLConnection bc = url.openConnection();
-			BufferedReader in = new BufferedReader(new InputStreamReader(bc.getInputStream()));
-//			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("WoWhead-" + profession))));
-
-			String line;
-			while ((line = in.readLine()) != null) {
-				if (line.startsWith(prefix) && line.endsWith(suffix)) {
-					int index = line.indexOf(offset);
-					if (index != -1) {
-						line = line.substring(index + offset.length(), line.length() - suffix.length());
-						JSONArray rows = new JSONArray(line);
-						for (int i = 0; i < rows.length(); i++) {
-							JSONObject row = rows.getJSONObject(i);
-//							out.write(row + "\n");
-							int id = row.optInt("id");
-							Item item = getSpellItem(id);
-							if (item != null) {
-								JSONArray reagents = row.optJSONArray("reagents");
-								if (reagents != null) {
-									String re = "";
-									for (int j = 0; j < reagents.length(); j++) {
-										JSONArray obj = reagents.getJSONArray(j);
-
-										int component = obj.getInt(0);
-										int amount = obj.getInt(1);
-
-										components.put(component, "V");
-
-										re = re + component + ":" + amount + " ";
-									}
-
-//									String re = reagents.toString();
-
-//									re = re.replace("[[", "");
-//									re = re.replace("]]", "");
-//									re = re.replace("],[", " ");
-//									re = re.replace(",", ":");
-
-									item.reagents = re.trim();
-								}
-								JSONArray colors = row.optJSONArray("colors");
-								if (colors != null) {
-									int orange = colors.getInt(0);
-									int yellow = colors.getInt(1);
-									int green  = colors.getInt(2);
-									int grey   = colors.getInt(3);
-
-									if (green == 0) { green = grey; }
-									if (yellow == 0) { yellow = green; }
-									if (orange == 0) { orange = yellow; }
-
-									item.skill = item.skill + orange + "/" + yellow + "/" + green + "/" + grey;
-								}
-								JSONArray creates = row.optJSONArray("creates");
-								if (creates != null) {
-									item.yield = creates.optInt(1);
-								}
-							}
-						}
-					}
-					break;
-				}
-			}
-			in.close();
-//			out.close();
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-*/
 		try
 		{
 			int current = 0;
 			int total = spells.size();
-			
+
 			for (Object temp : spells) {
 				if (temp instanceof Item) {
-					Item entry = (Item)temp;
-					
-					Thread.sleep(25);
-					
+					Item item = (Item)temp;
+
+//					Thread.sleep(100);
+
 					current = current + 1;
-					System.out.println("  Scanning " + current + " of " + total + ". (" + entry.spell + ")\r");
-					
-					URL url = new URL("http://www.wowhead.com/spell=" + entry.spell);
+					System.out.println("  Scanning " + current + " of " + total + ". (" + item.spell + ")\r");
+
+					URL url = new URL("http://www.thottbot.com/spell=" + item.spell);
 					URLConnection bc = url.openConnection();
-					BufferedReader in = new BufferedReader(new InputStreamReader(bc.getInputStream()));
+					InputStreamReader br = new InputStreamReader(bc.getInputStream());
+					BufferedReader in = new BufferedReader(br);
 //					BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("WoWhead-" + entry.spell))));
-					
-					Item item = new Item();
-					item.id = entry.id;
-					item.spell = entry.spell;
+
+					String prefix = "new Listview(";
+					String suffix = "});";
+					String offset = "data: ";
+
+//					Item item = new Item();
+//					item.id = entry.id;
+//					item.spell = entry.spell;
 					item.skill = getSkill(profession);
-					
+
 					String line;
-					
+
 					while ((line = in.readLine()) != null) {
 						if (line.startsWith(prefix) && line.endsWith(suffix)) {
 							int index = line.indexOf(offset);
-							
+
 							if (index != -1) {
 								JSONArray rows;
 								JSONObject row;
-								
+
 								// recipe data
 								if (line.contains("id: 'recipes'")) {
 //									System.out.println("'recipes' exists for " + entry.spell);
-									
+
 									line = line.substring(index + offset.length(), line.length() - suffix.length());
 									rows = new JSONArray(line);
 									row = rows.getJSONObject(0);
-									
+
 //									out.write("recipes        " + row + "\n");
-									
+
 									item.spell = row.getInt("id");
-									
+
 									JSONArray reagents = row.optJSONArray("reagents");
 									if (reagents != null) {
 										String re = "";
 										for (int j = 0; j < reagents.length(); j++) {
 											JSONArray obj = reagents.getJSONArray(j);
-											
+
 											int component = obj.getInt(0);
 											int amount = obj.getInt(1);
-											
+
 											// TODO: get component source instead of defaulting to "vendor"
 											components.put(component, "V");
-											
+
 											re = re + component + ":" + amount + " ";
 										}
-										
+
 //										String re = reagents.toString();
-										
+
 //										re = re.replace("[[", "");
 //										re = re.replace("]]", "");
 //										re = re.replace("],[", " ");
 //										re = re.replace(",", ":");
-										
+
 										item.reagents = re.trim();
 									}
-									
+
 									JSONArray colors = row.optJSONArray("colors");
 									if (colors != null) {
 										int orange = colors.getInt(0);
 										int yellow = colors.getInt(1);
 										int green  = colors.getInt(2);
 										int grey   = colors.getInt(3);
-										
+
 										if (green == 0) { green = grey; }
 										if (yellow == 0) { yellow = green; }
 										if (orange == 0) { orange = yellow; }
-										
+
 										item.skill = item.skill + orange + "/" + yellow + "/" + green + "/" + grey;
 									}
-									
+
 									JSONArray creates = row.optJSONArray("creates");
 									if (creates != null) {
 //										item.id    = creates.optInt(0);
 										item.yield = creates.getInt(1);
 									}
 								}
-								
+
 								// the item that teaches the recipe
 								if (line.contains("id: 'taught-by-item'")) {
 //									System.out.println("'taught-by-item' exists for " + entry.spell);
-									
+
 									line = line.substring(index + offset.length(), line.length() - suffix.length());
 									rows = new JSONArray(line);
 									row = rows.getJSONObject(0);
-									
+
 //									out.write("taught-by-item " + row + "\n");
-									
+
 									item.recipe = row.optInt("id");
-									
+
 									JSONArray sources = row.optJSONArray("source");
 									if (sources != null) {
 										String source = "";
@@ -481,7 +512,7 @@ public class TSInfo
 //					out.close();
 				}
 			}
-			
+
 			System.out.println("  Done!                            \n");
 		}
 		catch (Exception e)
@@ -553,12 +584,18 @@ public class TSInfo
 
 		for (String profession : professions) {
 			System.out.println("Scanning " + profession + "...");
-			tsi.readFromBuffed(profession);
-			tsi.readFromWowHead(profession);
+			// GetBuffed has enchanting info that Wowhead does not, so let's scrape their website first.
+			if (profession.contains("Enchanting")) {
+				tsi.scanBuffed(profession);
+				tsi.readFromWowHead(profession);
+			} else {
+				tsi.scanWowHead(profession);
+				tsi.readFromWowHead(profession);
+			}
 		}
 
 		System.out.println("Saving data to Data.lua...");
-		tsi.writeToFile("../Data.lua");
+		tsi.writeToFile("Data.lua");
 
 		long difftime = System.currentTimeMillis() - starttime;
 		System.out.println("Scan completed in " + difftime / 1000 + " seconds.");
