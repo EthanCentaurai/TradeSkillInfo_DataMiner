@@ -25,17 +25,22 @@ class Combine
 	public int recipeId = 0;
 	public int yield = 0;
 	public int itemid = 0;
+	public int usedBy = 0;
 
 	public Combine()
 	{
 		spell = 0;
 	}
 
+	// [spell] = createsId|skill|reagents|recipeId|yield|itemId
 	public String toString()
 	{
 		if (skill.length() > 1)
 		{
-			String temp = "\t[" + spell + "] = \"" + createsId + "|" + skill + "|" + reagents;
+			int productId = (createsId > 0) ? createsId :
+				((usedBy > 0) ? usedBy : 130206);	// If there is no suitable item created by the spell, just use "Informative Note" as stub
+
+			String temp = "\t[" + spell + "] = \"" + productId + "|" + skill + "|" + reagents;
 
 			if (itemid != 0)
 				return temp + "|" + (recipeId != 0 ? recipeId : "") + "|" + (yield != 0 ? yield : "") + "|" + itemid + "\",\n";
@@ -415,6 +420,17 @@ public class TSInfo
 										}
 									}
 								}
+								else if (line.contains("id: 'used-by-item'"))
+								{
+//									System.out.println("    'used-by-item' exists for " + spell);
+
+									line = line.substring(index + offset.length(), line.length() - suffix.length());
+									rows = new JSONArray(line);
+									row = rows.getJSONObject(0);
+
+									combine.usedBy = row.getInt("id");
+								}
+
 								addCombine(combine);
 							}
 //							break;
