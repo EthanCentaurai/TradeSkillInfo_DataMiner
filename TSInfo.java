@@ -15,39 +15,40 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 
-class Item
+class Combine
 {
-	public int id;
 	public int spell;
+
+	public int createsId;
 	public String skill;
 	public String reagents;
-	public int recipe;
+	public int recipeId;
 	public int yield;
 	public int itemid;
 
-	public Item()
+	public Combine()
 	{
-		id = 0;
+		createsId = 0;
 		spell = 0;
 		skill = "";
 		reagents = "";
-		recipe = 0;
+		recipeId = 0;
 		yield = 0;
 		itemid = 0;
 	}
 
 	public String toString() {
 		if (skill.length() > 1) {
-			String temp = "\t[" + spell + "] = \"" + id + "|" + skill + "|" + reagents;
+			String temp = "\t[" + spell + "] = \"" + createsId + "|" + skill + "|" + reagents;
 
 			if (itemid != 0) {
-				return temp + "|" + (recipe != 0 ? recipe : "") + "|" + (yield != 0 ? yield : "") + "|" + itemid + "\",\n";
+				return temp + "|" + (recipeId != 0 ? recipeId : "") + "|" + (yield != 0 ? yield : "") + "|" + itemid + "\",\n";
 			}
 			if (yield != 0) {
-				return temp + "|" + (recipe != 0 ? recipe : "") + "|" + yield + "\",\n";
+				return temp + "|" + (recipeId != 0 ? recipeId : "") + "|" + yield + "\",\n";
 			}
-			if (recipe != 0) {
-				return temp + "|" + recipe + "\",\n";
+			if (recipeId != 0) {
+				return temp + "|" + recipeId + "\",\n";
 			}
 
 			return temp + "\",\n";
@@ -85,49 +86,49 @@ public class TSInfo
 	public ArrayList combines;
 	public Map<Integer, String> components;
 	public ArrayList<Object> recipes;
-	public ArrayList<Item> spells;
+	public ArrayList<Combine> spells;
 
 	public TSInfo()
 	{
 		combines = new ArrayList();
 		components = new HashMap<Integer, String>();
 		recipes = new ArrayList<Object>();
-		spells = new ArrayList<Item>();
+		spells = new ArrayList<Combine>();
 	}
 
-	public Item getItem(int id)
+	public Combine getItem(int id)
 	{
 		for (Object entry : combines) {
-			if (entry instanceof Item) {
-				Item item = (Item)entry;
-				if (item.id == id || item.itemid == id) {
-					return item;
+			if (entry instanceof Combine) {
+				Combine combine = (Combine)entry;
+				if (combine.createsId == id || combine.itemid == id) {
+					return combine;
 				}
 			}
 		}
 		return null;
 	}
 
-	public Item getSpellItem(int spell)
+	public Combine getSpellItem(int spell)
 	{
 		for (Object entry : combines) {
-			if (entry instanceof Item) {
-				Item item = (Item)entry;
-				if (spell > 0 && item.spell == spell) {
-					return item;
+			if (entry instanceof Combine) {
+				Combine combine = (Combine)entry;
+				if (spell > 0 && combine.spell == spell) {
+					return combine;
 				}
-				if (spell < 0 && item.id == spell) {
-					return item;
+				if (spell < 0 && combine.createsId == spell) {
+					return combine;
 				}
 			}
 		}
 		return null;
 	}
 
-	public void addCombine(Item newItem)
+	public void addCombine(Combine newItem)
 	{
-		int id = newItem.id;
-		Item oldItem = getItem(id);
+		int id = newItem.createsId;
+		Combine oldItem = getItem(id);
 		if (oldItem == null) {
 			combines.add(newItem);
 			return;
@@ -157,7 +158,7 @@ public class TSInfo
 		return 0;
 	}
 
-	public String getSkill(String profession)
+	public String getProfessionLetter(String profession)
 	{
 		String temp = "";
 		switch (profession) {
@@ -200,10 +201,10 @@ public class TSInfo
 							if (rows != null) {
 								for (int i = 0; i < rows.length(); i++) {
 									JSONObject row = rows.getJSONObject(i);
-									Item item = new Item();
-									item.id = getId(row.optJSONObject("p"));
-									item.spell = row.getInt("id");
-									spells.add(item);
+									Combine combine = new Combine();
+									combine.createsId = getId(row.optJSONObject("p"));
+									combine.spell = row.getInt("id");
+									spells.add(combine);
 								}
 							}
 						}
@@ -245,8 +246,8 @@ public class TSInfo
 							JSONObject row = rows.getJSONObject(i);
 							int id = row.optInt("id");
 
-							Item item = new Item();
-							if (item != null) {
+							Combine combine = new Combine();
+							if (combine != null) {
 								JSONArray reagents = row.optJSONArray("reagents");
 
 								if (reagents != null) {
@@ -262,7 +263,7 @@ public class TSInfo
 										re = re + component + ":" + amount + " ";
 									}
 
-									item.reagents = re.trim();
+									combine.reagents = re.trim();
 								}
 								JSONArray colors = row.optJSONArray("colors");
 
@@ -276,17 +277,17 @@ public class TSInfo
 									if (yellow == 0) { yellow = green; }
 									if (orange == 0) { orange = yellow; }
 
-									item.skill = item.skill + orange + "/" + yellow + "/" + green + "/" + grey;
+									combine.skill = combine.skill + orange + "/" + yellow + "/" + green + "/" + grey;
 								}
 								JSONArray creates = row.optJSONArray("creates");
 
 								if (creates != null) {
-									item.id = creates.optInt(0);
-									item.yield = creates.optInt(1);
+									combine.createsId = creates.optInt(0);
+									combine.yield = creates.optInt(1);
 								}
 
-								item.spell = id;
-								spells.add(item);
+								combine.spell = id;
+								spells.add(combine);
 							}
 						}
 					}
@@ -327,7 +328,7 @@ public class TSInfo
 // 16 Fished
 // 21 Pickpocketed
 
-	public void readFromWowHead(String profession)
+	public void readProfessionFromWowHead(String profession)
 	{
 		try
 		{
@@ -335,15 +336,15 @@ public class TSInfo
 			int total = spells.size();
 
 			for (Object temp : spells) {
-				if (temp instanceof Item) {
-					Item item = (Item)temp;
+				if (temp instanceof Combine) {
+					Combine combine = (Combine)temp;
 
 //					Thread.sleep(100);
 
 					current = current + 1;
-					System.out.println("  Scanning " + current + " of " + total + ". (" + item.spell + ")\r");
+					System.out.println("  Scanning " + current + " of " + total + ". (" + combine.spell + ")\r");
 
-					URL url = new URL("http://www.thottbot.com/spell=" + item.spell);
+					URL url = new URL("http://www.thottbot.com/spell=" + combine.spell);
 					URLConnection bc = url.openConnection();
 					InputStreamReader br = new InputStreamReader(bc.getInputStream());
 					BufferedReader in = new BufferedReader(br);
@@ -352,7 +353,7 @@ public class TSInfo
 					String suffix = "});";
 					String offset = "data: ";
 
-					item.skill = getSkill(profession);
+					combine.skill = getProfessionLetter(profession);
 
 					String line;
 
@@ -372,7 +373,7 @@ public class TSInfo
 									rows = new JSONArray(line);
 									row = rows.getJSONObject(0);
 
-									item.spell = row.getInt("id");
+									combine.spell = row.getInt("id");
 
 									JSONArray reagents = row.optJSONArray("reagents");
 									if (reagents != null) {
@@ -389,7 +390,7 @@ public class TSInfo
 											re = re + component + ":" + amount + " ";
 										}
 
-										item.reagents = re.trim();
+										combine.reagents = re.trim();
 									}
 
 									JSONArray colors = row.optJSONArray("colors");
@@ -403,13 +404,13 @@ public class TSInfo
 										if (yellow == 0) { yellow = green; }
 										if (orange == 0) { orange = yellow; }
 
-										item.skill = item.skill + orange + "/" + yellow + "/" + green + "/" + grey;
+										combine.skill = combine.skill + orange + "/" + yellow + "/" + green + "/" + grey;
 									}
 
 									JSONArray creates = row.optJSONArray("creates");
 									if (creates != null) {
-//										item.id    = creates.optInt(0);
-										item.yield = creates.getInt(1);
+//										combine.createsId    = creates.optInt(0);
+										combine.yield = creates.getInt(1);
 									}
 								}
 
@@ -421,7 +422,7 @@ public class TSInfo
 									rows = new JSONArray(line);
 									row = rows.getJSONObject(0);
 
-									item.recipe = row.optInt("id");
+									combine.recipeId = row.optInt("id");
 
 									JSONArray sources = row.optJSONArray("source");
 									if (sources != null) {
@@ -437,12 +438,12 @@ public class TSInfo
 											case 16 : source = "F"; break; // fished up
 											case 21 : source = "P"; break; // pickpocketed
 										}
-										if (item.recipe > 0) {
-											recipes.add(new Recipe(item.recipe, item.spell, source));
+										if (combine.recipeId > 0) {
+											recipes.add(new Recipe(combine.recipeId, combine.spell, source));
 										}
 									}
 								}
-								addCombine(item);
+								addCombine(combine);
 							}
 //							break;
 						}
@@ -472,8 +473,8 @@ public class TSInfo
 			out.write("}\n");
 
 			out.write("\nTradeskillInfo.vars.combines = {\n");
-			for (Object item : combines) {
-				out.write(item + "");
+			for (Object combine : combines) {
+				out.write(combine + "");
 			}
 			out.write("}\n");
 
@@ -485,8 +486,8 @@ public class TSInfo
 			out.write("}\n");
 
 			out.write("\nTradeskillInfo.vars.recipes = {\n");
-			for (Object item : recipes) {
-				out.write(item + "\n");
+			for (Object combine : recipes) {
+				out.write(combine + "\n");
 			}
 			out.write("}\n");
 
@@ -525,10 +526,10 @@ public class TSInfo
 			// GetBuffed has enchanting info that Wowhead does not, so let's scrape their website first.
 			if (profession.contains("Enchanting")) {
 				tsi.scanBuffed(profession);
-				tsi.readFromWowHead(profession);
+				tsi.readProfessionFromWowHead(profession);
 			} else {
 				tsi.scanWowHead(profession);
-				tsi.readFromWowHead(profession);
+				tsi.readProfessionFromWowHead(profession);
 			}
 		}
 
