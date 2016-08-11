@@ -17,6 +17,7 @@ import org.json.JSONObject;
 
 class Combine
 {
+	public String profession;
 	public int spell;
 
 	public int createsId = 0;
@@ -27,9 +28,10 @@ class Combine
 	public int itemid = 0;
 	public int usedBy = 0;
 
-	public Combine()
+	public Combine(int spell, String profession)
 	{
-		spell = 0;
+		this.profession = profession;
+		this.spell = spell;
 	}
 
 	// [spell] = createsId|skill|reagents|recipeId|yield|itemId
@@ -62,14 +64,16 @@ class Combine
 class Recipe
 {
 	public int id;
+	public String profession;
 	public Object result;
 	public String source;
 	public String price;
 	public String factionrank;
 
-	public Recipe(int id, Object result, String source)
+	public Recipe(int id, String profession, Object result, String source)
 	{
 		this.id = id;
+		this.profession = profession;
 		this.result = result;
 		this.source = source;
 		price = "";
@@ -279,8 +283,7 @@ public class TSInfo
 							JSONObject row = rows.getJSONObject(i);
 							int id = row.optInt("id");
 
-							Combine combine = new Combine();
-							combine.spell = id;
+							Combine combine = new Combine(id, profession);
 							spells.add(combine);
 						}
 					}
@@ -417,7 +420,7 @@ public class TSInfo
 											case 21 : source = "P"; break; // pickpocketed
 										}
 										if (combine.recipeId > 0) {
-											recipes.add(new Recipe(combine.recipeId, combine.spell, source));
+											recipes.add(new Recipe(combine.recipeId, profession, combine.spell, source));
 										}
 									}
 								}
