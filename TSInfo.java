@@ -77,6 +77,33 @@ class Recipe
 }
 
 
+class WowHeadParser
+{
+	public static void fillCombineReagents(Combine combine, JSONObject row, Map<Integer, String> components) throws JSONException
+	{
+		JSONArray reagents = row.optJSONArray("reagents");
+		if (reagents == null)
+			return;
+
+		String regStr = "";
+		for (int j = 0; j < reagents.length(); j++)
+		{
+			JSONArray reagent = reagents.getJSONArray(j);
+
+			int component = reagent.getInt(0);
+			int amount = reagent.getInt(1);
+
+			// TODO: get component source instead of defaulting to "vendor"
+			components.put(component, "V");
+
+			regStr = regStr + component + ":" + amount + " ";
+		}
+
+		combine.reagents = regStr.trim();
+	}
+}
+
+
 public class TSInfo
 {
 	public ArrayList combines;
@@ -173,6 +200,14 @@ public class TSInfo
 		return temp;
 	}
 
+	public void buffedProcessRow(JSONObject row) throws JSONException
+	{
+		Combine combine = new Combine();
+		combine.createsId = getId(row.optJSONObject("p"));
+		combine.spell = row.getInt("id");
+		spells.add(combine);
+	}
+
 	public void scanBuffed(String profession)
 	{
 		String prefix = "var bt = new Btabs(";
@@ -195,13 +230,8 @@ public class TSInfo
 						if (jObject != null) {
 							JSONArray rows = jObject.optJSONArray("rows");
 							if (rows != null) {
-								for (int i = 0; i < rows.length(); i++) {
-									JSONObject row = rows.getJSONObject(i);
-									Combine combine = new Combine();
-									combine.createsId = getId(row.optJSONObject("p"));
-									combine.spell = row.getInt("id");
-									spells.add(combine);
-								}
+								for (int i = 0; i < rows.length(); i++)
+									buffedProcessRow(rows.getJSONObject(i));
 							}
 						}
 					}
@@ -333,23 +363,7 @@ public class TSInfo
 
 									combine.spell = row.getInt("id");
 
-									JSONArray reagents = row.optJSONArray("reagents");
-									if (reagents != null) {
-										String re = "";
-										for (int j = 0; j < reagents.length(); j++) {
-											JSONArray obj = reagents.getJSONArray(j);
-
-											int component = obj.getInt(0);
-											int amount = obj.getInt(1);
-
-											// TODO: get component source instead of defaulting to "vendor"
-											components.put(component, "V");
-
-											re = re + component + ":" + amount + " ";
-										}
-
-										combine.reagents = re.trim();
-									}
+									WowHeadParser.fillCombineReagents(combine, row, components);
 
 									JSONArray colors = row.optJSONArray("colors");
 									if (colors != null) {
