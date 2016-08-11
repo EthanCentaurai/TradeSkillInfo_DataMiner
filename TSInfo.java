@@ -9,6 +9,8 @@ import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -146,14 +148,28 @@ public class TSInfo
 {
 	public ArrayList combines;
 	public Map<Integer, String> components;
-	public ArrayList<Object> recipes;
+	public SortedMap<Integer, Recipe> recipes;
 	public ArrayList<Combine> spells;
+
+	final static String[] professions = {
+		"Alchemy",
+		"Blacksmithing",
+		"Cooking",
+		"Enchanting",
+		"Engineering",
+		"First Aid",
+		"Inscription",
+		"Jewelcrafting",
+		"Leatherworking",
+		"Mining",
+		"Tailoring",
+	};
 
 	public TSInfo()
 	{
 		combines = new ArrayList();
 		components = new HashMap<Integer, String>();
-		recipes = new ArrayList<Object>();
+		recipes = new TreeMap<Integer, Recipe>();
 		spells = new ArrayList<Combine>();
 	}
 
@@ -303,7 +319,6 @@ public class TSInfo
 			{
 				if (line.startsWith(prefix) && line.endsWith(suffix)) {
 					combines.add("\n--[[ " + profession + " ]]--\n");
-					recipes.add("\n--[[ " + profession + " ]]--");
 					int index = line.indexOf(offset);
 					if (index != -1) {
 						line = line.substring(index + offset.length(), line.length() - suffix.length());
@@ -429,7 +444,8 @@ public class TSInfo
 											case 21 : source = "P"; break; // pickpocketed
 										}
 										if (combine.recipeId > 0) {
-											recipes.add(new Recipe(combine.recipeId, profession, combine.spell, source));
+											Recipe r = new Recipe(combine.recipeId, combine.profession, combine.spell, source);
+											recipes.put(r.id, r);
 										}
 									}
 								}
@@ -487,8 +503,12 @@ public class TSInfo
 			out.write("}\n");
 
 			out.write("\nTradeskillInfo.vars.recipes = {\n");
-			for (Object combine : recipes) {
-				out.write(combine + "\n");
+			for (String profession : professions)
+			{
+				out.write("\n\t--[[ " + profession + " ]]--\n");
+				for (Recipe recipe : recipes.values())
+					if (profession.equals(recipe.profession))
+						out.write(recipe + "\n");
 			}
 			out.write("}\n");
 
@@ -507,20 +527,6 @@ public class TSInfo
 
 		System.out.println("Beginning scan...");
 		TSInfo tsi = new TSInfo();
-
-		String[] professions = {
-			"Alchemy",
-			"Blacksmithing",
-			"Cooking",
-			"Enchanting",
-			"Engineering",
-			"First Aid",
-			"Inscription",
-			"Jewelcrafting",
-			"Leatherworking",
-			"Mining",
-			"Tailoring",
-		};
 
 		for (String profession : professions) {
 			System.out.println("Scanning " + profession + "...");
