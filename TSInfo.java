@@ -7,7 +7,6 @@ import java.io.OutputStreamWriter;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -147,7 +146,7 @@ class WowHeadParser
 public class TSInfo
 {
 	public ArrayList combines;
-	public Map<Integer, String> components;
+	public SortedMap<Integer, String> components;
 	public SortedMap<Integer, Recipe> recipes;
 	public ArrayList<Combine> spells;
 
@@ -168,7 +167,7 @@ public class TSInfo
 	public TSInfo()
 	{
 		combines = new ArrayList();
-		components = new HashMap<Integer, String>();
+		components = new TreeMap<Integer, String>();
 		recipes = new TreeMap<Integer, Recipe>();
 		spells = new ArrayList<Combine>();
 	}
@@ -496,9 +495,9 @@ public class TSInfo
 			out.write("}\n");
 
 			out.write("\nTradeskillInfo.vars.components = {\n");
-			for (Map.Entry<Integer, String> entry : components.entrySet())
+			for (int id : components.keySet())
 			{
-				out.write("\t[" + entry.getKey() + "] = \"" + entry.getValue() + "\",\n");
+				out.write("\t[" + id + "] = \"" + components.get(id) + "\",\n");
 			}
 			out.write("}\n");
 
