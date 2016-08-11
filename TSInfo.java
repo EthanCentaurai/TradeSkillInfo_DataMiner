@@ -230,7 +230,8 @@ public class TSInfo
 
 			spells.clear();
 			String line;
-			while ((line = in.readLine()) != null) {
+			while ((line = in.readLine()) != null)
+			{
 				if (line.startsWith(prefix) && line.endsWith(suffix)) {
 					combines.add("\n--[[ " + profession + " ]]--\n");
 					recipes.add("\n--[[ " + profession + " ]]--");
@@ -243,53 +244,14 @@ public class TSInfo
 							int id = row.optInt("id");
 
 							Combine combine = new Combine();
-							if (combine != null) {
-								JSONArray reagents = row.optJSONArray("reagents");
-
-								if (reagents != null) {
-									String re = "";
-									for (int j = 0; j < reagents.length(); j++) {
-										JSONArray obj = reagents.getJSONArray(j);
-
-										int component = obj.getInt(0);
-										int amount = obj.getInt(1);
-
-										components.put(component, "V");
-
-										re = re + component + ":" + amount + " ";
-									}
-
-									combine.reagents = re.trim();
-								}
-								JSONArray colors = row.optJSONArray("colors");
-
-								if (colors != null) {
-									int orange = colors.getInt(0);
-									int yellow = colors.getInt(1);
-									int green  = colors.getInt(2);
-									int grey   = colors.getInt(3);
-
-									if (green == 0) { green = grey; }
-									if (yellow == 0) { yellow = green; }
-									if (orange == 0) { orange = yellow; }
-
-									combine.skill = combine.skill + orange + "/" + yellow + "/" + green + "/" + grey;
-								}
-								JSONArray creates = row.optJSONArray("creates");
-
-								if (creates != null) {
-									combine.createsId = creates.optInt(0);
-									combine.yield = creates.optInt(1);
-								}
-
-								combine.spell = id;
-								spells.add(combine);
-							}
+							combine.spell = id;
+							spells.add(combine);
 						}
 					}
 					break;
 				}
 			}
+
 			in.close();
 		}
 		catch (Exception e)
@@ -405,7 +367,7 @@ public class TSInfo
 
 									JSONArray creates = row.optJSONArray("creates");
 									if (creates != null) {
-//										combine.createsId    = creates.optInt(0);
+										combine.createsId = creates.optInt(0);
 										combine.yield = creates.getInt(1);
 									}
 								}
