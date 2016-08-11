@@ -163,11 +163,6 @@ public class TSInfo
 		}
 	}
 
-	public int getId(JSONObject obj) throws JSONException
-	{
-		return obj != null ? obj.getInt("id") : 0;
-	}
-
 	public static int getProfessionId(String profession)
 	{
 		switch (profession) {
@@ -207,13 +202,22 @@ public class TSInfo
 
 	public void buffedProcessRow(JSONObject row) throws JSONException
 	{
-		Combine combine = new Combine();
-		combine.createsId = getId(row.optJSONObject("p"));
-		combine.spell = row.getInt("id");
-		spells.add(combine);
+		int spell = row.getInt("id");
+		Combine combine = getSpellItem(spell);
+		if (combine == null)
+			return;				// New combine. But practice shows that combines that are only on Buffed and not
+								// on WowHead seem to be not in game (old info left from betas, PTRs, etc).
+								// So we just ignore it.
+
+		JSONObject p = row.optJSONObject("p");
+		if (p == null)
+			return;
+
+		if (combine.usedBy == 0)
+			combine.usedBy = p.getInt("id");
 	}
 
-	public void scanBuffed(String profession)
+	public void addInfoFromBuffed(String profession)
 	{
 		String prefix = "var bt = new Btabs(";
 		String suffix = ");bt.init();</script>";
@@ -223,12 +227,9 @@ public class TSInfo
 			URLConnection bc = url.openConnection();
 			BufferedReader in = new BufferedReader(new InputStreamReader(bc.getInputStream()));
 
-			spells.clear();
 			String line;
 			while ((line = in.readLine()) != null) {
 				if (line.startsWith(prefix) && line.endsWith(suffix)) {
-					combines.add("\n--[[ " + profession + " ]]--\n");
-					recipes.add("\n--[[ " + profession + " ]]--");
 					JSONArray jArray = new JSONArray(line.substring(prefix.length(), line.length() - suffix.length()));
 					if (jArray.length() > 0) {
 						JSONObject jObject = jArray.optJSONObject(0);
@@ -511,14 +512,11 @@ public class TSInfo
 
 		for (String profession : professions) {
 			System.out.println("Scanning " + profession + "...");
-			// GetBuffed has enchanting info that Wowhead does not, so let's scrape their website first.
-			if (profession.contains("Enchanting")) {
-				tsi.scanBuffed(profession);
-				tsi.readProfessionFromWowHead(profession);
-			} else {
-				tsi.scanWowHead(profession);
-				tsi.readProfessionFromWowHead(profession);
-			}
+
+			tsi.scanWowHead(profession);
+			tsi.readProfessionFromWowHead(profession);
+			if (profession.equals("Enchanting"))	// GetBuffed has some additional info that WowHead does not, so let's add it.
+				tsi.addInfoFromBuffed(profession);
 		}
 
 		System.out.println("Saving data to Data.lua...");
