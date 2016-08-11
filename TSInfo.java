@@ -19,40 +19,36 @@ class Combine
 {
 	public int spell;
 
-	public int createsId;
-	public String skill;
-	public String reagents;
-	public int recipeId;
-	public int yield;
-	public int itemid;
+	public int createsId = 0;
+	public String skill = "";
+	public String reagents = "";
+	public int recipeId = 0;
+	public int yield = 0;
+	public int itemid = 0;
 
 	public Combine()
 	{
-		createsId = 0;
 		spell = 0;
-		skill = "";
-		reagents = "";
-		recipeId = 0;
-		yield = 0;
-		itemid = 0;
 	}
 
-	public String toString() {
-		if (skill.length() > 1) {
+	public String toString()
+	{
+		if (skill.length() > 1)
+		{
 			String temp = "\t[" + spell + "] = \"" + createsId + "|" + skill + "|" + reagents;
 
-			if (itemid != 0) {
+			if (itemid != 0)
 				return temp + "|" + (recipeId != 0 ? recipeId : "") + "|" + (yield != 0 ? yield : "") + "|" + itemid + "\",\n";
-			}
-			if (yield != 0) {
+
+			if (yield != 0)
 				return temp + "|" + (recipeId != 0 ? recipeId : "") + "|" + yield + "\",\n";
-			}
-			if (recipeId != 0) {
+
+			if (recipeId != 0)
 				return temp + "|" + recipeId + "\",\n";
-			}
 
 			return temp + "\",\n";
 		}
+
 		return "";
 	}
 }
@@ -140,7 +136,7 @@ public class TSInfo
 		return obj != null ? obj.getInt("id") : 0;
 	}
 
-	public int getProfessionId(String profession)
+	public static int getProfessionId(String profession)
 	{
 		switch (profession) {
 			case "Alchemy"        : return 171;
@@ -158,7 +154,7 @@ public class TSInfo
 		return 0;
 	}
 
-	public String getProfessionLetter(String profession)
+	public static String getProfessionLetter(String profession)
 	{
 		String temp = "";
 		switch (profession) {
