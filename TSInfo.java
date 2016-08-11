@@ -145,7 +145,7 @@ class WowHeadParser
 
 public class TSInfo
 {
-	public ArrayList combines;
+	public SortedMap<Integer, Combine> combines;
 	public SortedMap<Integer, String> components;
 	public SortedMap<Integer, Recipe> recipes;
 	public ArrayList<Combine> spells;
@@ -166,49 +166,17 @@ public class TSInfo
 
 	public TSInfo()
 	{
-		combines = new ArrayList();
+		combines = new TreeMap<Integer, Combine>();
 		components = new TreeMap<Integer, String>();
 		recipes = new TreeMap<Integer, Recipe>();
 		spells = new ArrayList<Combine>();
 	}
 
-	public Combine getItem(int id)
+	public void addCombine(Combine newCombine)
 	{
-		for (Object entry : combines) {
-			if (entry instanceof Combine) {
-				Combine combine = (Combine)entry;
-				if (combine.createsId == id || combine.itemid == id) {
-					return combine;
-				}
-			}
-		}
-		return null;
-	}
-
-	public Combine getSpellItem(int spell)
-	{
-		for (Object entry : combines) {
-			if (entry instanceof Combine) {
-				Combine combine = (Combine)entry;
-				if (spell > 0 && combine.spell == spell) {
-					return combine;
-				}
-				if (spell < 0 && combine.createsId == spell) {
-					return combine;
-				}
-			}
-		}
-		return null;
-	}
-
-	public void addCombine(Combine newItem)
-	{
-		int id = newItem.createsId;
-		Combine oldItem = getItem(id);
-		if (oldItem == null) {
-			combines.add(newItem);
-			return;
-		}
+		int id = newCombine.spell;
+		if (combines.get(id) == null)
+			combines.put(id, newCombine);
 	}
 
 	public static int getProfessionId(String profession)
@@ -251,7 +219,7 @@ public class TSInfo
 	public void buffedProcessRow(JSONObject row) throws JSONException
 	{
 		int spell = row.getInt("id");
-		Combine combine = getSpellItem(spell);
+		Combine combine = combines.get(spell);
 		if (combine == null)
 			return;				// New combine. But practice shows that combines that are only on Buffed and not
 								// on WowHead seem to be not in game (old info left from betas, PTRs, etc).
@@ -317,7 +285,6 @@ public class TSInfo
 			while ((line = in.readLine()) != null)
 			{
 				if (line.startsWith(prefix) && line.endsWith(suffix)) {
-					combines.add("\n--[[ " + profession + " ]]--\n");
 					int index = line.indexOf(offset);
 					if (index != -1) {
 						line = line.substring(index + offset.length(), line.length() - suffix.length());
@@ -489,8 +456,12 @@ public class TSInfo
 			out.write("}\n");
 
 			out.write("\nTradeskillInfo.vars.combines = {\n");
-			for (Object combine : combines) {
-				out.write(combine + "");
+			for (String profession : professions)
+			{
+				out.write("\n\t--[[ " + profession + " ]]--\n");
+				for (Combine combine : combines.values())
+					if (profession.equals(combine.profession))
+						out.write(combine.toString());
 			}
 			out.write("}\n");
 
