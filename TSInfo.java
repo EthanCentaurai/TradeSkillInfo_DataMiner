@@ -365,27 +365,27 @@ public class TSInfo
 
 	public void readProfessionFromWowHead(String profession)
 	{
-		try
+		int current = 0;
+		int total = spells.size();
+
+		for (Integer spell : spells)
 		{
-			int current = 0;
-			int total = spells.size();
+//			Thread.sleep(100);
 
-			for (Integer spell : spells)
+			current = current + 1;
+			System.out.println("  Scanning " + current + " of " + total + ". (" + spell + ")\r");
+
+			try
 			{
-//				Thread.sleep(100);
-
-				current = current + 1;
-				System.out.println("  Scanning " + current + " of " + total + ". (" + spell + ")\r");
-				
 				readSpellDetailsFromWowHead(spell, profession);
 			}
+			catch (Exception e)
+			{
+				e.printStackTrace();
+			}
+		}
 
-			System.out.println("  Done!                            \n");
-		}
-		catch (Exception e)
-		{
-			e.printStackTrace();
-		}
+		System.out.println("  Done!                            \n");
 	}
 
 // Components
