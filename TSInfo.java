@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -89,6 +91,26 @@ class Recipe
 
 class WowHeadParser
 {
+	public static String extractListViewId(String line)
+	{
+		Pattern idPattern = Pattern.compile("new Listview\\(\\{template: '.*?', id: '(.*?)',");
+		Matcher m = idPattern.matcher(line);
+		if (!m.find())
+			return null;
+
+		return m.group(1);
+	}
+
+	public static JSONArray extractListViewDataArray(String line) throws JSONException
+	{
+		Pattern dataPattern = Pattern.compile("data: (\\[.*\\])\\}\\);");
+		Matcher m = dataPattern.matcher(line);
+		if (!m.find())
+			return new JSONArray();
+
+		return new JSONArray(m.group(1));
+	}
+
 	public static void fillCombineReagents(Combine combine, JSONObject row, Map<Integer, String> components) throws JSONException
 	{
 		JSONArray reagents = row.optJSONArray("reagents");
@@ -302,9 +324,8 @@ public class TSInfo
 			URLConnection bc = url.openConnection();
 			BufferedReader in = new BufferedReader(new InputStreamReader(bc.getInputStream()));
 
-			String prefix = "new Listview({template: 'spell', id: 'recipes',";
+			String prefix = "new Listview({";
 			String suffix = "});";
-			String offset = "data: ";
 
 			spells.clear();
 			String line;
@@ -313,18 +334,23 @@ public class TSInfo
 				if (!line.startsWith(prefix) || !line.endsWith(suffix))
 					continue;
 
-				int index = line.indexOf(offset);
-				if (index != -1) {
-					line = line.substring(index + offset.length(), line.length() - suffix.length());
-					JSONArray rows = new JSONArray(line);
-					for (int i = 0; i < rows.length(); i++) {
-						JSONObject row = rows.getJSONObject(i);
-						int id = row.optInt("id");
+				// Unfortunately, we can't just parse this JSON, because it may contain some JavaScript constructs mixed in.
+				// So we first extract the fields we need with regex and then parse.
+				String listViewId = WowHeadParser.extractListViewId(line);
+				if (!"recipes".equals(listViewId))
+					continue;
 
-						Combine combine = new Combine(id, profession);
-						spells.add(combine);
-					}
+				JSONArray rows = WowHeadParser.extractListViewDataArray(line);
+				for (int i = 0; i < rows.length(); i++)
+				{
+					JSONObject row = rows.getJSONObject(i);
+
+					int id = row.optInt("id");
+
+					Combine combine = new Combine(id, profession);
+					spells.add(combine);
 				}
+
 				break;
 			}
 
@@ -383,61 +409,47 @@ public class TSInfo
 					InputStreamReader br = new InputStreamReader(bc.getInputStream());
 					BufferedReader in = new BufferedReader(br);
 
-					String prefix = "new Listview(";
+					String prefix = "new Listview({";
 					String suffix = "});";
-					String offset = "data: ";
 
 					String line;
-
 					while ((line = in.readLine()) != null)
 					{
 						if (!line.startsWith(prefix) || !line.endsWith(suffix))
 							continue;
 
-						int index = line.indexOf(offset);
-						if (index != -1) {
-							JSONArray rows;
-							JSONObject row;
+						// Unfortunately, we can't just parse this JSON, because it may contain some JavaScript constructs mixed in.
+						// So we first extract the fields we need with regex and then parse.
+						String id = WowHeadParser.extractListViewId(line);
 
-							// recipe data
-							if (line.contains("id: 'recipes'")) {
-//									System.out.println("'recipes' exists for " + entry.spell);
+						if ("recipes".equals(id))
+						{
+//							System.out.println("'recipes' exists for " + entry.spell);
+							JSONObject row = WowHeadParser.extractListViewDataArray(line).getJSONObject(0);
 
-								line = line.substring(index + offset.length(), line.length() - suffix.length());
-								rows = new JSONArray(line);
-								row = rows.getJSONObject(0);
+							combine.spell = row.getInt("id");
 
-								combine.spell = row.getInt("id");
+							WowHeadParser.fillCombineReagents(combine, row, components);
+							WowHeadParser.fillCombineSkill(combine, row);
+							WowHeadParser.fillCombineYield(combine, row);
+						}
+						else if ("taught-by-item".equals(id))
+						{
+//							System.out.println("'taught-by-item' exists for " + entry.spell);
+							JSONObject row = WowHeadParser.extractListViewDataArray(line).getJSONObject(0);
 
-								WowHeadParser.fillCombineReagents(combine, row, components);
-								WowHeadParser.fillCombineSkill(combine, row);
-								WowHeadParser.fillCombineYield(combine, row);
-							}
+							WowHeadParser.fillCombineSource(combine, row, recipes);
+						}
+						else if ("used-by-item".equals(id))
+						{
+//							System.out.println("    'used-by-item' exists for " + spell);
+							JSONObject row = WowHeadParser.extractListViewDataArray(line).getJSONObject(0);
 
-							// the item that teaches the recipe
-							if (line.contains("id: 'taught-by-item'")) {
-//									System.out.println("'taught-by-item' exists for " + entry.spell);
-
-								line = line.substring(index + offset.length(), line.length() - suffix.length());
-								rows = new JSONArray(line);
-								row = rows.getJSONObject(0);
-
-								WowHeadParser.fillCombineSource(combine, row, recipes);
-							}
-							else if (line.contains("id: 'used-by-item'"))
-							{
-//									System.out.println("    'used-by-item' exists for " + spell);
-
-								line = line.substring(index + offset.length(), line.length() - suffix.length());
-								rows = new JSONArray(line);
-								row = rows.getJSONObject(0);
-
-								combine.usedBy = row.getInt("id");
-							}
-
-							addCombine(combine);
+							combine.usedBy = row.getInt("id");
 						}
 					}
+
+					addCombine(combine);
 					in.close();
 				}
 			}
