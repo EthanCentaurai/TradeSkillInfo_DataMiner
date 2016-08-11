@@ -140,6 +140,32 @@ class WowHeadParser
 		combine.createsId = creates.optInt(0);
 		combine.yield = creates.getInt(1);
 	}
+
+	public static void fillCombineSource(Combine combine, JSONObject row, SortedMap<Integer, Recipe> recipes) throws JSONException
+	{
+		combine.recipeId = row.optInt("id");
+
+		JSONArray sources = row.optJSONArray("source");
+		if ((combine.recipeId > 0) && (sources != null))
+		{
+			String source = "";
+			switch (sources.getInt(0))
+			{
+				case 1  : source = "C"; break; // crafted by a player
+				case 2  : source = "D"; break; // dropped as loot
+				case 4  : source = "Q"; break; // quest reward
+				case 5  : source = "V"; break; // bought from vendor
+				case 6  : source = "T"; break; // learned from trainer
+				case 10 : source = "R"; break; // starter recipe
+				case 12 : source = "A"; break; // achievement reward
+				case 16 : source = "F"; break; // fished up
+				case 21 : source = "P"; break; // pickpocketed
+			}
+
+			Recipe r = new Recipe(combine.recipeId, combine.profession, combine.spell, source);
+			recipes.put(r.id, r);
+		}
+	}
 }
 
 
@@ -393,27 +419,7 @@ public class TSInfo
 									rows = new JSONArray(line);
 									row = rows.getJSONObject(0);
 
-									combine.recipeId = row.optInt("id");
-
-									JSONArray sources = row.optJSONArray("source");
-									if (sources != null) {
-										String source = "";
-										switch (sources.getInt(0)) {
-											case 1  : source = "C"; break; // crafted by a player
-											case 2  : source = "D"; break; // dropped as loot
-											case 4  : source = "Q"; break; // quest reward
-											case 5  : source = "V"; break; // bought from vendor
-											case 6  : source = "T"; break; // learned from trainer
-											case 10 : source = "R"; break; // starter recipe
-											case 12 : source = "A"; break; // achievement reward
-											case 16 : source = "F"; break; // fished up
-											case 21 : source = "P"; break; // pickpocketed
-										}
-										if (combine.recipeId > 0) {
-											Recipe r = new Recipe(combine.recipeId, combine.profession, combine.spell, source);
-											recipes.put(r.id, r);
-										}
-									}
+									WowHeadParser.fillCombineSource(combine, row, recipes);
 								}
 								else if (line.contains("id: 'used-by-item'"))
 								{
