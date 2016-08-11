@@ -38,7 +38,6 @@ class Item
 
 	public String toString() {
 		if (skill.length() > 1) {
-//			String temp = "\t[" + id + "] = \"" + (spell != 0 ? spell + "|" : "") + skill + "|" + reagents;
 			String temp = "\t[" + spell + "] = \"" + id + "|" + skill + "|" + reagents;
 
 			if (itemid != 0) {
@@ -76,7 +75,6 @@ class Recipe
 	}
 
 	public String toString() {
-//		return "\t[" + id + "] = \"" + result + "|" + source + "|" + price + "|" + factionrank + "\",";
 		return "\t[" + id + "] = \"" + result + "|" + source + "\",";
 	}
 }
@@ -159,11 +157,9 @@ public class TSInfo
 		return 0;
 	}
 
-//	public String getSkill(JSONObject obj) throws JSONException
 	public String getSkill(String profession)
 	{
 		String temp = "";
-//		switch (obj.getString("school")) {
 		switch (profession) {
 			case "Alchemy"        : temp = "A"; break;
 			case "Blacksmithing"  : temp = "B"; break;
@@ -180,17 +176,6 @@ public class TSInfo
 		return temp;
 	}
 
-	public int getRecipe(JSONArray arr) throws JSONException
-	{
-		if (arr != null) {
-			JSONObject recipe = arr.optJSONObject(0);
-			if (recipe != null) {
-				return recipe.optInt("id");
-			}
-		}
-		return 0;
-	}
-
 	public void scanBuffed(String profession)
 	{
 		String prefix = "var bt = new Btabs(";
@@ -200,7 +185,6 @@ public class TSInfo
 			URL url = new URL("http://wowdata.getbuffed.com/spell/profession/" + getProfessionId(profession));
 			URLConnection bc = url.openConnection();
 			BufferedReader in = new BufferedReader(new InputStreamReader(bc.getInputStream()));
-//			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("Buffed-" + profession))));
 
 			spells.clear();
 			String line;
@@ -216,28 +200,10 @@ public class TSInfo
 							if (rows != null) {
 								for (int i = 0; i < rows.length(); i++) {
 									JSONObject row = rows.getJSONObject(i);
-//									out.write(row + "\n");
-/*
-									int id = getId(row.optJSONObject("p"));
-									if (id != 0) {
-										Item item = new Item();
-										item.id = id;
-										item.spell = row.getInt("id");
-										item.skill = getSkill(row);
-										item.recipe = getRecipe(row.optJSONArray("rec"));
-										addCombine(item);
-										if (item.recipe > 0) {
-											recipes.add(new Recipe(item.recipe, item.spell));
-										}
-									}
-*/
-//									String name = row.getString("n");
-//									if (!name.contains("UNUSED")) {
-										Item item = new Item();
-										item.id = getId(row.optJSONObject("p"));
-										item.spell = row.getInt("id");
-										spells.add(item);
-//									}
+									Item item = new Item();
+									item.id = getId(row.optJSONObject("p"));
+									item.spell = row.getInt("id");
+									spells.add(item);
 								}
 							}
 						}
@@ -246,7 +212,6 @@ public class TSInfo
 				}
 			}
 			in.close();
-//			out.close();
 		}
 		catch (Exception e)
 		{
@@ -261,7 +226,6 @@ public class TSInfo
 			URL url = new URL("http://www.thottbot.com/skill=" + getProfessionId(profession));
 			URLConnection bc = url.openConnection();
 			BufferedReader in = new BufferedReader(new InputStreamReader(bc.getInputStream()));
-//			BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("WoWhead-" + profession))));
 
 			String prefix = "new Listview({template: 'spell', id: 'recipes',";
 			String suffix = "});";
@@ -279,11 +243,9 @@ public class TSInfo
 						JSONArray rows = new JSONArray(line);
 						for (int i = 0; i < rows.length(); i++) {
 							JSONObject row = rows.getJSONObject(i);
-//							out.write(row + "\n");
 							int id = row.optInt("id");
 
 							Item item = new Item();
-//							Item item = getSpellItem(id);
 							if (item != null) {
 								JSONArray reagents = row.optJSONArray("reagents");
 
@@ -299,13 +261,6 @@ public class TSInfo
 
 										re = re + component + ":" + amount + " ";
 									}
-
-//									String re = reagents.toString();
-
-//									re = re.replace("[[", "");
-//									re = re.replace("]]", "");
-//									re = re.replace("],[", " ");
-//									re = re.replace(",", ":");
 
 									item.reagents = re.trim();
 								}
@@ -339,7 +294,6 @@ public class TSInfo
 				}
 			}
 			in.close();
-//			out.close();
 		}
 		catch (Exception e)
 		{
@@ -393,15 +347,11 @@ public class TSInfo
 					URLConnection bc = url.openConnection();
 					InputStreamReader br = new InputStreamReader(bc.getInputStream());
 					BufferedReader in = new BufferedReader(br);
-//					BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(new File("WoWhead-" + entry.spell))));
 
 					String prefix = "new Listview(";
 					String suffix = "});";
 					String offset = "data: ";
 
-//					Item item = new Item();
-//					item.id = entry.id;
-//					item.spell = entry.spell;
 					item.skill = getSkill(profession);
 
 					String line;
@@ -422,8 +372,6 @@ public class TSInfo
 									rows = new JSONArray(line);
 									row = rows.getJSONObject(0);
 
-//									out.write("recipes        " + row + "\n");
-
 									item.spell = row.getInt("id");
 
 									JSONArray reagents = row.optJSONArray("reagents");
@@ -440,13 +388,6 @@ public class TSInfo
 
 											re = re + component + ":" + amount + " ";
 										}
-
-//										String re = reagents.toString();
-
-//										re = re.replace("[[", "");
-//										re = re.replace("]]", "");
-//										re = re.replace("],[", " ");
-//										re = re.replace(",", ":");
 
 										item.reagents = re.trim();
 									}
@@ -480,8 +421,6 @@ public class TSInfo
 									rows = new JSONArray(line);
 									row = rows.getJSONObject(0);
 
-//									out.write("taught-by-item " + row + "\n");
-
 									item.recipe = row.optInt("id");
 
 									JSONArray sources = row.optJSONArray("source");
@@ -509,7 +448,6 @@ public class TSInfo
 						}
 					}
 					in.close();
-//					out.close();
 				}
 			}
 
