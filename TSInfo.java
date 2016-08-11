@@ -110,6 +110,35 @@ class WowHeadParser
 
 		combine.reagents = regStr.trim();
 	}
+
+	public static void fillCombineSkill(Combine combine, JSONObject row) throws JSONException
+	{
+		JSONArray colors = row.optJSONArray("colors");
+		if (colors == null)
+			return;
+
+		int orange = colors.getInt(0);
+		int yellow = colors.getInt(1);
+		int green  = colors.getInt(2);
+		int grey   = colors.getInt(3);
+
+		if (green == 0) { green = grey; }
+		if (yellow == 0) { yellow = green; }
+		if (orange == 0) { orange = yellow; }
+
+		String profLetter = TSInfo.getProfessionLetter(combine.profession);
+		combine.skill = profLetter + orange + "/" + yellow + "/" + green + "/" + grey;
+	}
+
+	public static void fillCombineYield(Combine combine, JSONObject row) throws JSONException
+	{
+		JSONArray creates = row.optJSONArray("creates");
+		if (creates == null)
+			return;
+
+		combine.createsId = creates.optInt(0);
+		combine.yield = creates.getInt(1);
+	}
 }
 
 
@@ -350,8 +379,6 @@ public class TSInfo
 					String suffix = "});";
 					String offset = "data: ";
 
-					combine.skill = getProfessionLetter(profession);
-
 					String line;
 
 					while ((line = in.readLine()) != null) {
@@ -373,26 +400,8 @@ public class TSInfo
 									combine.spell = row.getInt("id");
 
 									WowHeadParser.fillCombineReagents(combine, row, components);
-
-									JSONArray colors = row.optJSONArray("colors");
-									if (colors != null) {
-										int orange = colors.getInt(0);
-										int yellow = colors.getInt(1);
-										int green  = colors.getInt(2);
-										int grey   = colors.getInt(3);
-
-										if (green == 0) { green = grey; }
-										if (yellow == 0) { yellow = green; }
-										if (orange == 0) { orange = yellow; }
-
-										combine.skill = combine.skill + orange + "/" + yellow + "/" + green + "/" + grey;
-									}
-
-									JSONArray creates = row.optJSONArray("creates");
-									if (creates != null) {
-										combine.createsId = creates.optInt(0);
-										combine.yield = creates.getInt(1);
-									}
+									WowHeadParser.fillCombineSkill(combine, row);
+									WowHeadParser.fillCombineYield(combine, row);
 								}
 
 								// the item that teaches the recipe
