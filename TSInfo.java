@@ -310,21 +310,22 @@ public class TSInfo
 			String line;
 			while ((line = in.readLine()) != null)
 			{
-				if (line.startsWith(prefix) && line.endsWith(suffix)) {
-					int index = line.indexOf(offset);
-					if (index != -1) {
-						line = line.substring(index + offset.length(), line.length() - suffix.length());
-						JSONArray rows = new JSONArray(line);
-						for (int i = 0; i < rows.length(); i++) {
-							JSONObject row = rows.getJSONObject(i);
-							int id = row.optInt("id");
+				if (!line.startsWith(prefix) || !line.endsWith(suffix))
+					continue;
 
-							Combine combine = new Combine(id, profession);
-							spells.add(combine);
-						}
+				int index = line.indexOf(offset);
+				if (index != -1) {
+					line = line.substring(index + offset.length(), line.length() - suffix.length());
+					JSONArray rows = new JSONArray(line);
+					for (int i = 0; i < rows.length(); i++) {
+						JSONObject row = rows.getJSONObject(i);
+						int id = row.optInt("id");
+
+						Combine combine = new Combine(id, profession);
+						spells.add(combine);
 					}
-					break;
 				}
+				break;
 			}
 
 			in.close();
@@ -388,53 +389,53 @@ public class TSInfo
 
 					String line;
 
-					while ((line = in.readLine()) != null) {
-						if (line.startsWith(prefix) && line.endsWith(suffix)) {
-							int index = line.indexOf(offset);
+					while ((line = in.readLine()) != null)
+					{
+						if (!line.startsWith(prefix) || !line.endsWith(suffix))
+							continue;
 
-							if (index != -1) {
-								JSONArray rows;
-								JSONObject row;
+						int index = line.indexOf(offset);
+						if (index != -1) {
+							JSONArray rows;
+							JSONObject row;
 
-								// recipe data
-								if (line.contains("id: 'recipes'")) {
+							// recipe data
+							if (line.contains("id: 'recipes'")) {
 //									System.out.println("'recipes' exists for " + entry.spell);
 
-									line = line.substring(index + offset.length(), line.length() - suffix.length());
-									rows = new JSONArray(line);
-									row = rows.getJSONObject(0);
+								line = line.substring(index + offset.length(), line.length() - suffix.length());
+								rows = new JSONArray(line);
+								row = rows.getJSONObject(0);
 
-									combine.spell = row.getInt("id");
+								combine.spell = row.getInt("id");
 
-									WowHeadParser.fillCombineReagents(combine, row, components);
-									WowHeadParser.fillCombineSkill(combine, row);
-									WowHeadParser.fillCombineYield(combine, row);
-								}
+								WowHeadParser.fillCombineReagents(combine, row, components);
+								WowHeadParser.fillCombineSkill(combine, row);
+								WowHeadParser.fillCombineYield(combine, row);
+							}
 
-								// the item that teaches the recipe
-								if (line.contains("id: 'taught-by-item'")) {
+							// the item that teaches the recipe
+							if (line.contains("id: 'taught-by-item'")) {
 //									System.out.println("'taught-by-item' exists for " + entry.spell);
 
-									line = line.substring(index + offset.length(), line.length() - suffix.length());
-									rows = new JSONArray(line);
-									row = rows.getJSONObject(0);
+								line = line.substring(index + offset.length(), line.length() - suffix.length());
+								rows = new JSONArray(line);
+								row = rows.getJSONObject(0);
 
-									WowHeadParser.fillCombineSource(combine, row, recipes);
-								}
-								else if (line.contains("id: 'used-by-item'"))
-								{
+								WowHeadParser.fillCombineSource(combine, row, recipes);
+							}
+							else if (line.contains("id: 'used-by-item'"))
+							{
 //									System.out.println("    'used-by-item' exists for " + spell);
 
-									line = line.substring(index + offset.length(), line.length() - suffix.length());
-									rows = new JSONArray(line);
-									row = rows.getJSONObject(0);
+								line = line.substring(index + offset.length(), line.length() - suffix.length());
+								rows = new JSONArray(line);
+								row = rows.getJSONObject(0);
 
-									combine.usedBy = row.getInt("id");
-								}
-
-								addCombine(combine);
+								combine.usedBy = row.getInt("id");
 							}
-//							break;
+
+							addCombine(combine);
 						}
 					}
 					in.close();
