@@ -196,7 +196,7 @@ public class TSInfo
 	public SortedMap<Integer, Combine> combines;
 	public SortedMap<Integer, String> components;
 	public SortedMap<Integer, Recipe> recipes;
-	public ArrayList<Combine> spells;
+	public ArrayList<Integer> spells;
 
 	final static String[] professions = {
 		"Alchemy",
@@ -217,7 +217,7 @@ public class TSInfo
 		combines = new TreeMap<Integer, Combine>();
 		components = new TreeMap<Integer, String>();
 		recipes = new TreeMap<Integer, Recipe>();
-		spells = new ArrayList<Combine>();
+		spells = new ArrayList<Integer>();
 	}
 
 	public void addCombine(Combine newCombine)
@@ -346,9 +346,8 @@ public class TSInfo
 					JSONObject row = rows.getJSONObject(i);
 
 					int id = row.optInt("id");
-
-					Combine combine = new Combine(id, profession);
-					spells.add(combine);
+					if (id != 0)
+						spells.add(id);
 				}
 
 				break;
@@ -395,63 +394,60 @@ public class TSInfo
 			int current = 0;
 			int total = spells.size();
 
-			for (Object temp : spells) {
-				if (temp instanceof Combine) {
-					Combine combine = (Combine)temp;
+			for (Integer spell : spells)
+			{
+//				Thread.sleep(100);
 
-//					Thread.sleep(100);
+				current = current + 1;
+				System.out.println("  Scanning " + current + " of " + total + ". (" + spell + ")\r");
 
-					current = current + 1;
-					System.out.println("  Scanning " + current + " of " + total + ". (" + combine.spell + ")\r");
+				URL url = new URL("http://www.thottbot.com/spell=" + spell);
+				URLConnection bc = url.openConnection();
+				InputStreamReader br = new InputStreamReader(bc.getInputStream());
+				BufferedReader in = new BufferedReader(br);
 
-					URL url = new URL("http://www.thottbot.com/spell=" + combine.spell);
-					URLConnection bc = url.openConnection();
-					InputStreamReader br = new InputStreamReader(bc.getInputStream());
-					BufferedReader in = new BufferedReader(br);
+				String prefix = "new Listview({";
+				String suffix = "});";
 
-					String prefix = "new Listview({";
-					String suffix = "});";
+				Combine combine = new Combine(spell, profession);
 
-					String line;
-					while ((line = in.readLine()) != null)
+				String line;
+				while ((line = in.readLine()) != null)
+				{
+					if (!line.startsWith(prefix) || !line.endsWith(suffix))
+						continue;
+
+					// Unfortunately, we can't just parse this JSON, because it may contain some JavaScript constructs mixed in.
+					// So we first extract the fields we need with regex and then parse.
+					String id = WowHeadParser.extractListViewId(line);
+
+					if ("recipes".equals(id))
 					{
-						if (!line.startsWith(prefix) || !line.endsWith(suffix))
-							continue;
+//						System.out.println("'recipes' exists for " + spell);
+						JSONObject row = WowHeadParser.extractListViewDataArray(line).getJSONObject(0);
 
-						// Unfortunately, we can't just parse this JSON, because it may contain some JavaScript constructs mixed in.
-						// So we first extract the fields we need with regex and then parse.
-						String id = WowHeadParser.extractListViewId(line);
-
-						if ("recipes".equals(id))
-						{
-//							System.out.println("'recipes' exists for " + entry.spell);
-							JSONObject row = WowHeadParser.extractListViewDataArray(line).getJSONObject(0);
-
-							combine.spell = row.getInt("id");
-
-							WowHeadParser.fillCombineReagents(combine, row, components);
-							WowHeadParser.fillCombineSkill(combine, row);
-							WowHeadParser.fillCombineYield(combine, row);
-						}
-						else if ("taught-by-item".equals(id))
-						{
-//							System.out.println("'taught-by-item' exists for " + entry.spell);
-							JSONObject row = WowHeadParser.extractListViewDataArray(line).getJSONObject(0);
-
-							WowHeadParser.fillCombineSource(combine, row, recipes);
-						}
-						else if ("used-by-item".equals(id))
-						{
-//							System.out.println("    'used-by-item' exists for " + spell);
-							JSONObject row = WowHeadParser.extractListViewDataArray(line).getJSONObject(0);
-
-							combine.usedBy = row.getInt("id");
-						}
+						WowHeadParser.fillCombineReagents(combine, row, components);
+						WowHeadParser.fillCombineSkill(combine, row);
+						WowHeadParser.fillCombineYield(combine, row);
 					}
+					else if ("taught-by-item".equals(id))
+					{
+//						System.out.println("'taught-by-item' exists for " + spell);
+						JSONObject row = WowHeadParser.extractListViewDataArray(line).getJSONObject(0);
 
-					addCombine(combine);
-					in.close();
+						WowHeadParser.fillCombineSource(combine, row, recipes);
+					}
+					else if ("used-by-item".equals(id))
+					{
+//						System.out.println("    'used-by-item' exists for " + spell);
+						JSONObject row = WowHeadParser.extractListViewDataArray(line).getJSONObject(0);
+
+						combine.usedBy = row.getInt("id");
+					}
 				}
+
+				addCombine(combine);
+				in.close();
 			}
 
 			System.out.println("  Done!                            \n");
