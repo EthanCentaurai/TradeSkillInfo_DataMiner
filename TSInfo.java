@@ -168,11 +168,14 @@ class WowHeadParser
 	public static void fillCombineSource(Combine combine, JSONObject row, SortedMap<Integer, Recipe> recipes) throws JSONException
 	{
 		combine.recipeId = row.optInt("id");
+		if (combine.recipeId <= 0)
+			return;
 
 		JSONArray sources = row.optJSONArray("source");
-		if ((combine.recipeId > 0) && (sources != null))
+
+		String source = "U";	// New letter for Unavailable recipes
+		if (sources != null)
 		{
-			String source = "";
 			switch (sources.getInt(0))
 			{
 				case 1  : source = "C"; break; // crafted by a player
@@ -185,10 +188,10 @@ class WowHeadParser
 				case 16 : source = "F"; break; // fished up
 				case 21 : source = "P"; break; // pickpocketed
 			}
-
-			Recipe r = new Recipe(combine.recipeId, combine.profession, combine.spell, source);
-			recipes.put(r.id, r);
 		}
+
+		Recipe r = new Recipe(combine.recipeId, combine.profession, combine.spell, source);
+		recipes.put(r.id, r);
 	}
 }
 
