@@ -202,6 +202,7 @@ public class TSInfo
 	public SortedMap<Integer, String> components;
 	public SortedMap<Integer, Recipe> recipes;
 	public ArrayList<Integer> spells;
+	public boolean caughtExceptions = false;
 
 	final static String[] professions = {
 		"Alchemy",
@@ -317,12 +318,15 @@ public class TSInfo
 		}
 		catch (Exception e)
 		{
+			caughtExceptions = true;
 			e.printStackTrace();
 		}
 	}
 
 	public void scanWowHead(String profession)
 	{
+		spells.clear();
+
 		try
 		{
 			URL url = new URL("http://www.thottbot.com/skill=" + getProfessionId(profession));
@@ -332,7 +336,6 @@ public class TSInfo
 			String prefix = "new Listview({";
 			String suffix = "});";
 
-			spells.clear();
 			String line;
 			while ((line = in.readLine()) != null)
 			{
@@ -362,6 +365,7 @@ public class TSInfo
 		}
 		catch (Exception e)
 		{
+			caughtExceptions = true;
 			e.printStackTrace();
 		}
 	}
@@ -384,6 +388,7 @@ public class TSInfo
 			}
 			catch (Exception e)
 			{
+				caughtExceptions = true;
 				e.printStackTrace();
 			}
 		}
@@ -508,6 +513,7 @@ public class TSInfo
 		}
 		catch (Exception e)
 		{
+			caughtExceptions = true;
 			e.printStackTrace();
 		}
 	}
@@ -534,5 +540,7 @@ public class TSInfo
 
 		long difftime = System.currentTimeMillis() - starttime;
 		System.out.println("Scan completed in " + difftime / 1000 + " seconds.");
+		if (tsi.caughtExceptions)
+			System.out.println("Some exceptions encountered.");
 	}
 }
