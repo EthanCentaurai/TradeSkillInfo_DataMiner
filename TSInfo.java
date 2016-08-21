@@ -454,9 +454,13 @@ public class TSInfo
 			else if ("taught-by-item".equals(id))
 			{
 //				System.out.println("    'taught-by-item' exists for " + spell);
-				JSONObject row = WowHeadParser.extractListViewDataArray(line).getJSONObject(0);
+				JSONArray dataArray = WowHeadParser.extractListViewDataArray(line);
 
-				WowHeadParser.fillCombineSource(combine, row, recipes);
+				for (int i = 0; i < dataArray.length(); i++)
+				{
+					JSONObject row = dataArray.getJSONObject(i);
+					WowHeadParser.fillCombineSource(combine, row, recipes);
+				}
 			}
 			else if ("used-by-item".equals(id))
 			{
