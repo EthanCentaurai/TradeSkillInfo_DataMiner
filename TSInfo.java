@@ -329,7 +329,7 @@ public class TSInfo
 
 		try
 		{
-			URL url = new URL("http://www.thottbot.com/skill=" + getProfessionId(profession));
+			URL url = new URL("http://www.wowhead.com/skill=" + getProfessionId(profession));
 			URLConnection bc = url.openConnection();
 			BufferedReader in = new BufferedReader(new InputStreamReader(bc.getInputStream()));
 
@@ -423,7 +423,7 @@ public class TSInfo
 
 	public void readSpellDetailsFromWowHead(int spell, String profession) throws MalformedURLException, IOException, JSONException
 	{
-		URL url = new URL("http://www.thottbot.com/spell=" + spell);
+		URL url = new URL("http://www.wowhead.com/spell=" + spell);
 		URLConnection bc = url.openConnection();
 		InputStreamReader br = new InputStreamReader(bc.getInputStream());
 		BufferedReader in = new BufferedReader(br);
