@@ -1,5 +1,5 @@
 @echo off
-path %path%;C:\Program Files\Java\jdk1.8.0_121\bin
+path %path%;C:\Program Files\Java\jdk-9.0.4\bin
 
 rem javac
 rem pause
