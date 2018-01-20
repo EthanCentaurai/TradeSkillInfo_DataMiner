@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -543,7 +544,19 @@ public class TSInfo
 		tsi.writeToFile("Data.lua");
 
 		long difftime = System.currentTimeMillis() - starttime;
-		System.out.println("Scan completed in " + difftime / 1000 + " seconds.");
+
+//		long hours = TimeUnit.MILLISECONDS.toHours(difftime);
+//		difftime -= TimeUnit.HOURS.toMillis(hours);
+
+		long minutes = TimeUnit.MILLISECONDS.toMinutes(difftime);
+		difftime -= TimeUnit.MINUTES.toMillis(minutes);
+
+		long seconds = TimeUnit.MILLISECONDS.toSeconds(difftime);
+
+//		String formattedtime = String.format("Scan completed in %02d hours, %02d minutes, %02d seconds.", hours, minutes, seconds);
+		String formattedtime = String.format("Scan completed in %02d minutes and %02d seconds.", minutes, seconds);
+		System.out.println("Scan completed in " + formattedtime);
+
 		if (tsi.caughtExceptions)
 			System.out.println("Some exceptions encountered.");
 	}
