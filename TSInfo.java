@@ -294,7 +294,7 @@ public class TSInfo
 		String suffix = ");bt.init();</script>";
 		try
 		{
-			URL url = new URL("http://wowdata.getbuffed.com/spell/profession/" + getProfessionId(profession));
+			URL url = new URL("http://wowdata.buffed.de/spell/profession/" + getProfessionId(profession));
 			URLConnection bc = url.openConnection();
 			BufferedReader in = new BufferedReader(new InputStreamReader(bc.getInputStream()));
 
@@ -536,7 +536,7 @@ public class TSInfo
 
 			tsi.scanWowHead(profession);
 			tsi.readProfessionFromWowHead(profession);
-			if (profession.equals("Enchanting"))	// GetBuffed has some additional info that WowHead does not, so let's add it.
+//			if (profession.equals("Enchanting"))	// GetBuffed has some additional info that WowHead does not, so let's add it.
 				tsi.addInfoFromBuffed(profession);
 		}
 
