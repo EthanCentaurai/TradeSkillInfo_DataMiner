@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PATH=$PATH:/c/Program\ Files/Java/jdk-9.0.4/bin
+PATH=$PATH:/c/Program\ Files/Java/jdk1.8.0_181/bin
 
 javac -classpath classes -d classes TSInfo.java
 
