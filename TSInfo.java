@@ -211,7 +211,7 @@ public class TSInfo
 		"Cooking",
 		"Enchanting",
 		"Engineering",
-		"First Aid",
+//		"First Aid",
 		"Inscription",
 		"Jewelcrafting",
 		"Leatherworking",
@@ -242,7 +242,7 @@ public class TSInfo
 			case "Cooking"        : return 185;
 			case "Enchanting"     : return 333;
 			case "Engineering"    : return 202;
-			case "First Aid"      : return 129;
+//			case "First Aid"      : return 129;
 			case "Inscription"    : return 773;
 			case "Jewelcrafting"  : return 755;
 			case "Leatherworking" : return 165;
@@ -261,7 +261,7 @@ public class TSInfo
 			case "Cooking"        : temp = "W"; break;
 			case "Enchanting"     : temp = "D"; break;
 			case "Engineering"    : temp = "E"; break;
-			case "First Aid"      : temp = "X"; break;
+//			case "First Aid"      : temp = "X"; break;
 			case "Inscription"    : temp = "I"; break;
 			case "Jewelcrafting"  : temp = "J"; break;
 			case "Leatherworking" : temp = "L"; break;
