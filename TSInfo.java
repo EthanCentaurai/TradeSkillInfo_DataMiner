@@ -326,16 +326,18 @@ public class TSInfo
 
 	public void scanWowHead(String profession)
 	{
-		spells.clear();
+		// For some reason Pandaren Ways are not included on the main cooking page, we need to scan them seperately.
+		if (!profession.endsWith("filter=5;1;0"))
+			spells.clear();
 
 		try
 		{
-			URL url = new URL("http://www.wowhead.com/skill=" + getProfessionId(profession));
+			URL url = new URL("https://www.wowhead.com/" + profession);
 			URLConnection bc = url.openConnection();
 			BufferedReader in = new BufferedReader(new InputStreamReader(bc.getInputStream()));
 
-			String prefix = "new Listview({";
-			String suffix = "});";
+			String prefix = "var listviewspells = ";
+			String suffix = "}];";
 
 			String line;
 			while ((line = in.readLine()) != null)
@@ -343,13 +345,9 @@ public class TSInfo
 				if (!line.startsWith(prefix) || !line.endsWith(suffix))
 					continue;
 
-				// Unfortunately, we can't just parse this JSON, because it may contain some JavaScript constructs mixed in.
-				// So we first extract the fields we need with regex and then parse.
-				String listViewId = WowHeadParser.extractListViewId(line);
-				if (!"recipes".equals(listViewId))
-					continue;
+				line = line.substring(prefix.length());
+				JSONArray rows = new JSONArray(line);
 
-				JSONArray rows = WowHeadParser.extractListViewDataArray(line);
 				for (int i = 0; i < rows.length(); i++)
 				{
 					JSONObject row = rows.getJSONObject(i);
@@ -386,6 +384,7 @@ public class TSInfo
 			try
 			{
 				readSpellDetailsFromWowHead(spell, profession);
+				readSpellDetailsFromWowDB(spell, profession); // WoWDB has some additional info that WowHead does not, so let's add it.
 			}
 			catch (Exception e)
 			{
@@ -422,9 +421,48 @@ public class TSInfo
 // 16 Fished
 // 21 Pickpocketed
 
+	public void readSpellDetailsFromWowDB(int spell, String profession) throws MalformedURLException, IOException, JSONException
+	{
+		URL url = new URL("https://www.wowdb.com/api/spell/" + spell);
+		URLConnection bc = url.openConnection();
+		InputStreamReader br = new InputStreamReader(bc.getInputStream());
+		BufferedReader in = new BufferedReader(br);
+
+		String line;
+		while ((line = in.readLine()) != null)
+		{
+			Combine combine = combines.get(spell);
+			if (combine == null)
+				return;				// New combine. But practice shows that combines that are only on Buffed and not
+									// on WowHead seem to be not in game (old info left from betas, PTRs, etc).
+									// So we just ignore it.
+
+			if (combine.createsId == 0) {
+				System.out.println("    Scanning WoWDB for additional info...");
+
+				// WoWDB API returns JSON surrounded with parentheses which must be stripped.
+				line = line.substring(1);
+				JSONObject rows = new JSONObject(line);
+//				System.out.println(rows);
+
+				JSONArray row = rows.getJSONArray("Effects");
+//				System.out.println(row);
+
+				JSONObject effects = row.getJSONObject(0);
+//				System.out.println(effects);
+
+				combine.createsId = effects.getInt("Item");
+				combine.yield = effects.getInt("BasePoints");
+//				System.out.println(combine.createsId);
+			}
+		}
+
+		in.close();
+	}
+
 	public void readSpellDetailsFromWowHead(int spell, String profession) throws MalformedURLException, IOException, JSONException
 	{
-		URL url = new URL("http://www.wowhead.com/spell=" + spell);
+		URL url = new URL("https://www.wowhead.com/spell=" + spell);
 		URLConnection bc = url.openConnection();
 		InputStreamReader br = new InputStreamReader(bc.getInputStream());
 		BufferedReader in = new BufferedReader(br);
@@ -534,10 +572,17 @@ public class TSInfo
 		for (String profession : professions) {
 			System.out.println("Scanning " + profession + "...");
 
-			tsi.scanWowHead(profession);
+			if (profession.equals("Cooking")) {
+				// For some reason Pandaren Ways are not included on the main cooking page, we need to scan them seperately.
+				tsi.scanWowHead(profession.toLowerCase() + "-recipe-spells/live-only:on?filter=20;1;0");
+				tsi.scanWowHead(profession.toLowerCase() + "-recipe-spells/pandaren-cuisine-header/pandaren-cuisine/live-only:on?filter=5;1;0");
+			}
+			else if (!profession.equals("Cooking")) {
+				// Exclude PTR recipes, filter only for recipes that have reagents.
+				tsi.scanWowHead(profession.toLowerCase() + "-spells/live-only:on?filter=20;1;0");
+			}
+
 			tsi.readProfessionFromWowHead(profession);
-//			if (profession.equals("Enchanting"))	// GetBuffed has some additional info that WowHead does not, so let's add it.
-				tsi.addInfoFromBuffed(profession);
 		}
 
 		System.out.println("Saving data to Data.lua...");
