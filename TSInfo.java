@@ -327,13 +327,17 @@ public class TSInfo
 	public void scanWowHead(String profession)
 	{
 		// For some reason Pandaren Ways are not included on the main cooking page, we need to scan them seperately.
-		if (!profession.endsWith("filter=5;1;0"))
+		if (!profession.contains("pandaren-cuisine"))
 			spells.clear();
 
 		try
 		{
-			URL url = new URL("https://www.wowhead.com/" + profession);
+			URL url = new URL("https://www.wowhead.com/spells" + profession);
 			URLConnection bc = url.openConnection();
+			bc.addRequestProperty("User-Agent", "Mozilla");
+			bc.setReadTimeout(20000);
+			bc.setConnectTimeout(20000);
+
 			BufferedReader in = new BufferedReader(new InputStreamReader(bc.getInputStream()));
 
 			String prefix = "var listviewspells = ";
@@ -346,6 +350,15 @@ public class TSInfo
 					continue;
 
 				line = line.substring(prefix.length());
+
+				// WoWhead have a duplicate "quality" key in their JSON array. strip it out.
+				line = line.replaceAll(",quality:0,", ",");
+				line = line.replaceAll(",quality:1,", ",");
+				line = line.replaceAll(",quality:2,", ",");
+				line = line.replaceAll(",quality:3,", ",");
+				line = line.replaceAll(",quality:4,", ",");
+				line = line.replaceAll(",quality:5,", ",");
+
 				JSONArray rows = new JSONArray(line);
 
 				for (int i = 0; i < rows.length(); i++)
@@ -425,6 +438,10 @@ public class TSInfo
 	{
 		URL url = new URL("https://www.wowdb.com/api/spell/" + spell);
 		URLConnection bc = url.openConnection();
+		bc.addRequestProperty("User-Agent", "Mozilla");
+		bc.setReadTimeout(20000);
+		bc.setConnectTimeout(20000);
+
 		InputStreamReader br = new InputStreamReader(bc.getInputStream());
 		BufferedReader in = new BufferedReader(br);
 
@@ -464,6 +481,10 @@ public class TSInfo
 	{
 		URL url = new URL("https://www.wowhead.com/spell=" + spell);
 		URLConnection bc = url.openConnection();
+		bc.addRequestProperty("User-Agent", "Mozilla");
+		bc.setReadTimeout(20000);
+		bc.setConnectTimeout(20000);
+
 		InputStreamReader br = new InputStreamReader(bc.getInputStream());
 		BufferedReader in = new BufferedReader(br);
 
@@ -574,12 +595,12 @@ public class TSInfo
 
 			if (profession.equals("Cooking")) {
 				// For some reason Pandaren Ways are not included on the main cooking page, we need to scan them seperately.
-				tsi.scanWowHead(profession.toLowerCase() + "-recipe-spells/live-only:on?filter=20;1;0");
-				tsi.scanWowHead(profession.toLowerCase() + "-recipe-spells/pandaren-cuisine-header/pandaren-cuisine/live-only:on?filter=5;1;0");
+				tsi.scanWowHead("/secondary-skills/cooking/live-only:on?filter=20;1;0#0+17+20");
+				tsi.scanWowHead("/secondary-skills/cooking/pandaren-cuisine/live-only:on?filter=20;1;0#0+17+20");
 			}
 			else if (!profession.equals("Cooking")) {
 				// Exclude PTR recipes, filter only for recipes that have reagents.
-				tsi.scanWowHead(profession.toLowerCase() + "-spells/live-only:on?filter=20;1;0");
+				tsi.scanWowHead("/professions/" + profession.toLowerCase() + "/live-only:on?filter=20;1;0#0+17+20");
 			}
 
 			tsi.readProfessionFromWowHead(profession);
